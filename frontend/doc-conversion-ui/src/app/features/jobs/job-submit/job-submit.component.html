@@ -1,0 +1,130 @@
+<div class="submit-container">
+  <div class="header-section">
+    <div class="header-title-row">
+      <a routerLink="/jobs" class="back-link">
+        <svg class="back-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M10 19l-7-7m0 0l7-7m-7 7h18"
+          />
+        </svg>
+        Back to Jobs
+      </a>
+    </div>
+    <h1 class="page-title">Submit Document Conversion</h1>
+    <p class="page-subtitle">
+      Upload a source PDF for deterministic, rule-based extraction and splitting.
+    </p>
+  </div>
+
+  <div class="card-wrapper">
+    <form (ngSubmit)="onSubmit()" #jobForm="ngForm" class="form-body">
+      <!-- File Upload Field -->
+      <div class="form-group">
+        <label class="form-label">
+          Source PDF Document <span class="required">*</span>
+        </label>
+        <app-file-upload (fileSelected)="onFileSelected($event)"></app-file-upload>
+        <p class="field-hint">Select any standard or sample PDF file from your filesystem.</p>
+      </div>
+
+      <!-- Format Selection -->
+      <div class="form-group">
+        <label class="form-label">
+          Requested Output Format <span class="required">*</span>
+        </label>
+        <div class="format-grid">
+          <div
+            class="format-card"
+            [class.selected]="requestedFormat === 'Html'"
+            (click)="requestedFormat = 'Html'"
+          >
+            <div class="format-header">
+              <div class="format-radio" [class.checked]="requestedFormat === 'Html'"></div>
+              <span class="format-title">HTML (Structured Web)</span>
+            </div>
+            <p class="format-desc">
+              Deterministic conversion preserving text hierarchy and embedded raster images as base64 data URIs.
+            </p>
+            <div class="format-tag tag-recommended">Recommended</div>
+          </div>
+
+          <div
+            class="format-card"
+            [class.selected]="requestedFormat === 'Docx'"
+            (click)="requestedFormat = 'Docx'"
+          >
+            <div class="format-header">
+              <div class="format-radio" [class.checked]="requestedFormat === 'Docx'"></div>
+              <span class="format-title">DOCX (Word Document)</span>
+            </div>
+            <p class="format-desc">
+              Structured Word document format for text-first documents. Per specification rules, docs with images trigger format guard.
+            </p>
+            <div class="format-tag">Office Open XML</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Split & Validation Notice -->
+      <div class="info-callout">
+        <div class="callout-icon">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+        </div>
+        <div class="callout-content">
+          <strong>Deterministic Splitting & Validation Policy:</strong>
+          Converted documents exceeding the 2 MB threshold are automatically split into sequential parts.
+          Integrity and ordering are validated prior to completion.
+        </div>
+      </div>
+
+      <!-- Error Alert -->
+      @if (errorMessage) {
+        <div class="error-banner">
+          <svg class="error-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+            />
+          </svg>
+          <span>{{ errorMessage }}</span>
+        </div>
+      }
+
+      <!-- Submit Button -->
+      <div class="form-actions">
+        <button
+          type="submit"
+          class="submit-btn"
+          [disabled]="!selectedFile || isSubmitting"
+        >
+          @if (isSubmitting) {
+            <span class="btn-spinner"></span>
+            <span>Processing & Converting...</span>
+          } @else {
+            <svg class="btn-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M14 5l7 7m0 0l-7 7m7-7H3"
+              />
+            </svg>
+            <span>Convert & Process Document</span>
+          }
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

@@ -1,0 +1,239 @@
+<div class="detail-container">
+  <!-- Breadcrumb & Actions -->
+  <div class="top-nav">
+    <a routerLink="/jobs" class="back-link">
+      <svg class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+      </svg>
+      Back to Jobs
+    </a>
+    <div class="top-actions">
+      <button class="refresh-btn" (click)="loadJob()" [disabled]="isLoading" title="Refresh job status">
+        <svg
+          class="refresh-icon"
+          [class.spinning]="isLoading"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+          />
+        </svg>
+        <span>Refresh</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  @if (isLoading && !job) {
+    <div class="loading-panel">
+      <div class="spinner"></div>
+      <span>Loading document conversion details...</span>
+    </div>
+  }
+
+  <!-- Error State -->
+  @if (fetchError) {
+    <div class="error-banner">
+      <svg class="error-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+        />
+      </svg>
+      <span>{{ fetchError }}</span>
+    </div>
+  }
+
+  @if (job) {
+    <!-- Main Job Header Card -->
+    <div class="job-summary-card">
+      <div class="summary-top-row">
+        <div class="doc-icon-wrapper">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1.75"
+              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+            />
+          </svg>
+        </div>
+        <div class="doc-info">
+          <div class="title-row">
+            <h1 class="document-name">{{ job.sourceFileName }}</h1>
+            <app-status-badge [status]="job.status"></app-status-badge>
+          </div>
+          <p class="job-id-text">
+            Job ID: <code>{{ job.id }}</code>
+          </p>
+        </div>
+      </div>
+
+      <!-- Metas Grid -->
+      <div class="meta-grid">
+        <div class="meta-item">
+          <span class="meta-label">Requested Format</span>
+          <span class="meta-value badge-format">{{ job.requestedFormat }}</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Resolved Format</span>
+          <span class="meta-value">{{ job.resolvedFormat || '—' }}</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Output Parts</span>
+          <span class="meta-value highlight">{{ job.parts.length }} part(s)</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Submitted</span>
+          <span class="meta-value">{{ job.createdAt | date:'medium' }}</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Completed</span>
+          <span class="meta-value">{{ job.completedAt ? (job.completedAt | date:'medium') : 'In Progress' }}</span>
+        </div>
+      </div>
+
+      <!-- Exception / Alert Details if Failed or Flagged -->
+      @if (job.errorMessage || job.errorCode) {
+        <div
+          class="job-alert"
+          [class.alert-danger]="job.status === 'Failed'"
+          [class.alert-warning]="job.status === 'FlaggedForReview' || job.status === 'CompletedWithWarnings'"
+        >
+          <div class="alert-icon">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+              />
+            </svg>
+          </div>
+          <div class="alert-content">
+            <div class="alert-title">
+              <strong>{{ job.errorCode || 'Processing Exception' }}</strong>
+            </div>
+            <div class="alert-desc">{{ job.errorMessage }}</div>
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- Content Grid: Left: Output Parts, Right: Event Timeline -->
+    <div class="details-layout">
+      <!-- Output Parts Section -->
+      <div class="section-card parts-section">
+        <div class="section-header">
+          <h2 class="section-title">Output Parts ({{ job.parts.length }})</h2>
+          <span class="section-badge">Deterministic 2MB Split</span>
+        </div>
+
+        @if (job.parts.length === 0) {
+          <div class="empty-parts">
+            <svg class="empty-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.5"
+                d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
+              />
+            </svg>
+            <p>No output parts generated.</p>
+            <span class="empty-hint">
+              {{
+                job.status === 'Failed'
+                  ? 'Conversion aborted due to domain rule exception.'
+                  : 'Outputs will appear here once processing completes.'
+              }}
+            </span>
+          </div>
+        } @else {
+          <div class="parts-grid">
+            @for (part of job.parts; track part.partNumber) {
+              <div class="part-card" [class.oversized]="part.exceedsSizeLimit">
+                <div class="part-header">
+                  <div class="part-tag">Part {{ part.partNumber }} of {{ part.totalParts }}</div>
+                  @if (part.exceedsSizeLimit) {
+                    <span
+                      class="oversized-pill"
+                      title="This part contains a single unsplittable element larger than 2MB"
+                    >
+                      ⚠️ Exceeds Limit
+                    </span>
+                  }
+                </div>
+
+                <div class="part-body">
+                  <div class="part-size">{{ formatSize(part.sizeBytes) }}</div>
+                  <div class="part-path" [title]="part.filePath">{{ getFileName(part.filePath) }}</div>
+                </div>
+
+                <div class="part-footer">
+                  <a
+                    [href]="getDownloadUrl(part.partNumber)"
+                    class="download-btn"
+                    target="_blank"
+                  >
+                    <svg class="download-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                      />
+                    </svg>
+                    <span>Download Part</span>
+                  </a>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- Audit Event Timeline Section -->
+      <div class="section-card timeline-section">
+        <div class="section-header">
+          <h2 class="section-title">Audit Trail & Event History</h2>
+          <span class="section-badge">Sequential Log</span>
+        </div>
+
+        <div class="timeline-wrapper">
+          <div class="timeline">
+            @for (event of job.events; track event.id; let last = $last) {
+              <div class="timeline-item" [class.is-last]="last">
+                <div class="timeline-marker-wrapper">
+                  <div class="timeline-marker" [ngClass]="getMarkerClass(event.status)"></div>
+                  @if (!last) {
+                    <div class="timeline-line"></div>
+                  }
+                </div>
+
+                <div class="timeline-content">
+                  <div class="timeline-top">
+                    <app-status-badge [status]="event.status"></app-status-badge>
+                    <span class="timeline-time">{{ event.timestamp | date:'HH:mm:ss.SSS' }}</span>
+                  </div>
+                  <p class="timeline-message">{{ event.message }}</p>
+                  @if (event.errorCode) {
+                    <div class="timeline-error-code">
+                      Code: <code>{{ event.errorCode }}</code>
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+</div>

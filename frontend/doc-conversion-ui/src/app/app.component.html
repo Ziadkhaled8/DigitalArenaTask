@@ -1,0 +1,113 @@
+<div class="app-layout">
+  <!-- Top Global Navigation Bar -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="brand-section">
+        <a routerLink="/jobs" class="brand-link">
+          <div class="brand-logo">
+            <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect width="32" height="32" rx="8" fill="url(#brand-grad)" />
+              <path
+                d="M10 9H18L22 13V23H10V9Z"
+                stroke="white"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <path
+                d="M18 9V13H22"
+                stroke="white"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <path
+                d="M13 18H19"
+                stroke="#A5B4FC"
+                stroke-width="1.5"
+                stroke-linecap="round"
+              />
+              <path
+                d="M13 15H16"
+                stroke="#A5B4FC"
+                stroke-width="1.5"
+                stroke-linecap="round"
+              />
+              <defs>
+                <linearGradient id="brand-grad" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+                  <stop stop-color="#4F46E5" />
+                  <stop offset="1" stop-color="#7C3AED" />
+                </linearGradient>
+              </defs>
+            </svg>
+          </div>
+          <div class="brand-text">
+            <span class="brand-company">DIGIARENAS</span>
+            <span class="brand-product">DocSplitter Service</span>
+          </div>
+        </a>
+      </div>
+
+      <!-- Navigation Links -->
+      <nav class="nav-links">
+        <a
+          routerLink="/jobs"
+          routerLinkActive="active-link"
+          [routerLinkActiveOptions]="{ exact: true }"
+          class="nav-item"
+        >
+          <svg class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 6h16M4 10h16M4 14h16M4 18h16"
+            />
+          </svg>
+          <span>Jobs History</span>
+        </a>
+        <a
+          routerLink="/jobs/submit"
+          routerLinkActive="active-link"
+          class="nav-item"
+        >
+          <svg class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 4v16m8-8H4"
+            />
+          </svg>
+          <span>New Conversion</span>
+        </a>
+      </nav>
+
+      <!-- System Status Indicator -->
+      <div class="system-status">
+        <span class="live-dot"></span>
+        <span class="status-label">.NET 9 API Ready</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main View Outlet -->
+  <main class="app-main">
+    <router-outlet></router-outlet>
+  </main>
+
+  <!-- Global Footer -->
+  <footer class="app-footer">
+    <div class="footer-container">
+      <div class="footer-left">
+        <span>© 2026 Digital Arena Solutions • Document Conversion & Splitting Service</span>
+      </div>
+      <div class="footer-badges">
+        <span class="tech-pill">.NET 9 Clean Architecture</span>
+        <span class="tech-pill">Angular 19 Standalone</span>
+        <span class="tech-pill">SCSS Architecture</span>
+        <span class="tech-pill">Deterministic Splitting</span>
+      </div>
+    </div>
+  </footer>
+</div>

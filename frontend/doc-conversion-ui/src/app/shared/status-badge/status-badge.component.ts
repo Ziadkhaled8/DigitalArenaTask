@@ -1,0 +1,37 @@
+import { Component, Input } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { JobStatus } from '../../core/models/job-status.enum';
+
+@Component({
+  selector: 'app-status-badge',
+  standalone: true,
+  imports: [CommonModule],
+  templateUrl: './status-badge.component.html',
+  styleUrl: './status-badge.component.scss'
+})
+export class StatusBadgeComponent {
+  @Input() status: JobStatus | undefined;
+
+  get badgeClass(): string {
+    if (!this.status) return 'badge-received';
+    return `badge-${this.status.toLowerCase()}`;
+  }
+
+  get indicatorClass(): string {
+    return 'indicator-active';
+  }
+
+  get label(): string {
+    switch (this.status) {
+      case 'Received': return 'Received';
+      case 'Converting': return 'Converting';
+      case 'Splitting': return 'Splitting';
+      case 'ValidatingOutput': return 'Validating';
+      case 'Completed': return 'Completed';
+      case 'CompletedWithWarnings': return 'Completed with Warnings';
+      case 'FlaggedForReview': return 'Flagged for Review';
+      case 'Failed': return 'Failed';
+      default: return this.status || 'Unknown';
+    }
+  }
+}
