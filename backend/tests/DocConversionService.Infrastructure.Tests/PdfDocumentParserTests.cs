@@ -14,12 +14,14 @@ public class PdfDocumentParserTests
         // Check current directory, project directory, or workspace root
         var candidates = new[]
         {
+            Path.Combine(AppContext.BaseDirectory, "../../../../../../sample-files", filename),
             Path.Combine(AppContext.BaseDirectory, "../../../../../sample-files", filename),
             Path.Combine(Directory.GetCurrentDirectory(), "sample-files", filename),
             Path.Combine(Directory.GetCurrentDirectory(), "../sample-files", filename),
             Path.Combine(Directory.GetCurrentDirectory(), "../../sample-files", filename),
             Path.Combine(Directory.GetCurrentDirectory(), "../../../sample-files", filename),
-            Path.Combine(Directory.GetCurrentDirectory(), "../../../../sample-files", filename)
+            Path.Combine(Directory.GetCurrentDirectory(), "../../../../sample-files", filename),
+            Path.Combine(Directory.GetCurrentDirectory(), "../../../../../sample-files", filename)
         };
 
         foreach (var candidate in candidates)
