@@ -11,18 +11,18 @@ Built for the **Senior Full Stack Engineer Technical Assessment** at **Digital A
 The backend implements **Clean Architecture (Onion/Hexagonal)** with strict boundary separation and unidirectional dependency flow:
 
 ```
-DocConversionService.sln
-│
-├── src/
-│   ├── DocConversionService.Domain/           # Core enterprise logic, entities, value objects, exceptions, enums
-│   ├── DocConversionService.Application/      # Use case orchestration, DTOs, interfaces, commands, queries
-│   ├── DocConversionService.Infrastructure/   # PdfPig parsing, HTML/DOCX renderers, SQLite EF Core, file storage
-│   └── DocConversionService.Api/              # ASP.NET Core Web API, controllers, middleware, CORS, Swagger
-│
-├── tests/
-│   ├── DocConversionService.Domain.Tests/          # State machine transition rules & entity invariant unit tests
-│   ├── DocConversionService.Application.Tests/     # Mock-driven pipeline orchestration & edge-case unit tests
-│   └── DocConversionService.Infrastructure.Tests/  # Integration tests (PdfPig, splitting, storage, validation)
+├── backend/
+│   ├── DocConversionService.sln
+│   ├── src/
+│   │   ├── DocConversionService.Domain/           # Core enterprise logic, entities, value objects, exceptions, enums
+│   │   ├── DocConversionService.Application/      # Use case orchestration, DTOs, interfaces, commands, queries
+│   │   ├── DocConversionService.Infrastructure/   # PdfPig parsing, HTML/DOCX renderers, SQLite EF Core, file storage
+│   │   └── DocConversionService.Api/              # ASP.NET Core Web API, controllers, middleware, CORS, Swagger
+│   │
+│   └── tests/
+│       ├── DocConversionService.Domain.Tests/          # State machine transition rules & entity invariant unit tests
+│       ├── DocConversionService.Application.Tests/     # Mock-driven pipeline orchestration & edge-case unit tests
+│       └── DocConversionService.Infrastructure.Tests/  # Integration tests (PdfPig, splitting, storage, validation)
 │
 ├── frontend/doc-conversion-ui/                # Angular 19 standalone SPA (separated TS / HTML / SCSS)
 └── sample-files/                              # Test PDFs (text-only, text-with-images, scanned, corrupted)
@@ -88,10 +88,10 @@ The frontend is an **Angular 19 Standalone Single Page Application** featuring:
 cd c:/Users/ziadk/source/repos/Ziadkhaled8/DigitalArenaTask
 
 # 2. Run all unit and integration tests (42 passing)
-dotnet test DocConversionService.sln
+dotnet test backend/DocConversionService.sln
 
 # 3. Run the API (automatically runs migrations and listens on port 5000)
-dotnet run --project src/DocConversionService.Api/DocConversionService.Api.csproj
+dotnet run --project backend/src/DocConversionService.Api/DocConversionService.Api.csproj
 ```
 - Swagger UI available at: `http://localhost:5000/swagger`
 - API Base URL: `http://localhost:5000/api`
