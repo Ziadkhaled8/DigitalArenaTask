@@ -1,7 +1,7 @@
 namespace DocConversionService.Infrastructure.Tests;
 
+using DocConversionService.Application.Interfaces;
 using DocConversionService.Domain.Enums;
-using DocConversionService.Domain.Interfaces;
 using DocConversionService.Domain.Parsing;
 using DocConversionService.Infrastructure.Splitting;
 using NSubstitute;
@@ -127,5 +127,56 @@ public class DocumentSplitterTests
         Assert.Equal(1, parts[0].TotalParts);
         Assert.False(parts[0].ExceedsSizeLimit);
         Assert.Equal(2, parts[0].Elements.Count);
+    }
+
+    [Fact]
+    public void Split_OversizedElementInMiddleOfDocument_EmitsAsDedicatedPartAndFlagged()
+    {
+        // Arrange: Para 1 (500B), Huge Image (5000B), Para 2 (400B) with 2000B limit
+        var el1 = new ParagraphElement("Para 1");
+        var hugeImage = new ImageElement(new byte[10000], "image/png", 1);
+        var el2 = new ParagraphElement("Para 2");
+        var doc = new ParsedDocument(new List<DocumentElement> { el1, hugeImage, el2 });
+
+        _renderer.Render(Arg.Any<IReadOnlyList<DocumentElement>>())
+            .Returns(ci =>
+            {
+                var elements = ci.Arg<IReadOnlyList<DocumentElement>>();
+                int size = 0;
+                foreach (var el in elements)
+                {
+                    if (el == el1) size += 500;
+                    else if (el == hugeImage) size += 5000;
+                    else if (el == el2) size += 400;
+                }
+                return new byte[size];
+            });
+
+        // Act: 2000 limit
+        var parts = _splitter.Split(doc, _renderer, limitBytes: 2000);
+
+        // Assert:
+        // Part 1: el1 (500B, ExceedsSizeLimit: false)
+        // Part 2: hugeImage (5000B, ExceedsSizeLimit: true)
+        // Part 3: el2 (400B, ExceedsSizeLimit: false)
+        Assert.Equal(3, parts.Count);
+
+        Assert.Equal(1, parts[0].PartNumber);
+        Assert.False(parts[0].ExceedsSizeLimit);
+        Assert.Equal(500, parts[0].Content.Length);
+        Assert.Single(parts[0].Elements);
+        Assert.Same(el1, parts[0].Elements[0]);
+
+        Assert.Equal(2, parts[1].PartNumber);
+        Assert.True(parts[1].ExceedsSizeLimit);
+        Assert.Equal(5000, parts[1].Content.Length);
+        Assert.Single(parts[1].Elements);
+        Assert.Same(hugeImage, parts[1].Elements[0]);
+
+        Assert.Equal(3, parts[2].PartNumber);
+        Assert.False(parts[2].ExceedsSizeLimit);
+        Assert.Equal(400, parts[2].Content.Length);
+        Assert.Single(parts[2].Elements);
+        Assert.Same(el2, parts[2].Elements[0]);
     }
 }

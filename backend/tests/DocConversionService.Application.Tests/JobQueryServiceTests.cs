@@ -1,9 +1,9 @@
 namespace DocConversionService.Application.Tests;
 
+using DocConversionService.Application.Interfaces;
 using DocConversionService.Application.Jobs;
 using DocConversionService.Domain.Entities;
 using DocConversionService.Domain.Enums;
-using DocConversionService.Domain.Interfaces;
 using NSubstitute;
 using Xunit;
 

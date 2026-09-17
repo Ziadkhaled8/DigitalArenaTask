@@ -1,11 +1,11 @@
 namespace DocConversionService.Application.Tests;
 
 using DocConversionService.Application.Configuration;
+using DocConversionService.Application.Interfaces;
 using DocConversionService.Application.Jobs;
 using DocConversionService.Domain.Entities;
 using DocConversionService.Domain.Enums;
 using DocConversionService.Domain.Exceptions;
-using DocConversionService.Domain.Interfaces;
 using DocConversionService.Domain.Parsing;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
