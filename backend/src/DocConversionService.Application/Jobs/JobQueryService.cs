@@ -1,7 +1,7 @@
 namespace DocConversionService.Application.Jobs;
 
 using DocConversionService.Application.Dtos;
-using DocConversionService.Domain.Interfaces;
+using DocConversionService.Application.Interfaces;
 
 public class JobQueryService
 {

@@ -1,9 +1,9 @@
 namespace DocConversionService.Api.Controllers;
 
 using DocConversionService.Application.Dtos;
+using DocConversionService.Application.Interfaces;
 using DocConversionService.Application.Jobs;
 using DocConversionService.Domain.Enums;
-using DocConversionService.Domain.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
 [ApiController]

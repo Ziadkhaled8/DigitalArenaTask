@@ -10,7 +10,7 @@ obj/
 *.db-wal
 
 # Storage output
-/storage/
+/backend/src/DocConversionService.Api/storage
 
 # Node
 node_modules/
@@ -30,4 +30,4 @@ Thumbs.db
 
 # Environment
 appsettings.*.local.json
-/backend/src/DocConversionService.Api/storage
+

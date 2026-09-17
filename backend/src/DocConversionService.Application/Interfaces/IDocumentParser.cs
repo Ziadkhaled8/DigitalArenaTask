@@ -1,4 +1,4 @@
-namespace DocConversionService.Domain.Interfaces;
+namespace DocConversionService.Application.Interfaces;
 
 using DocConversionService.Domain.Parsing;
 

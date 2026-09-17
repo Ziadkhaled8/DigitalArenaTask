@@ -2,7 +2,7 @@ namespace DocConversionService.Infrastructure.Validation;
 
 using System.Security.Cryptography;
 using System.Text;
-using DocConversionService.Domain.Interfaces;
+using DocConversionService.Application.Interfaces;
 using DocConversionService.Domain.Parsing;
 
 public class JobValidator : IJobValidator

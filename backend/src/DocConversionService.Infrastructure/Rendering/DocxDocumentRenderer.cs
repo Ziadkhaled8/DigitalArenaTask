@@ -1,7 +1,7 @@
 namespace DocConversionService.Infrastructure.Rendering;
 
+using DocConversionService.Application.Interfaces;
 using DocConversionService.Domain.Enums;
-using DocConversionService.Domain.Interfaces;
 using DocConversionService.Domain.Parsing;
 using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;

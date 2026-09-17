@@ -1,4 +1,4 @@
-namespace DocConversionService.Domain.Interfaces;
+namespace DocConversionService.Application.Interfaces;
 
 public interface IFileStorageProvider
 {

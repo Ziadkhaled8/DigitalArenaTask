@@ -1,6 +1,7 @@
 namespace DocConversionService.Application.Jobs;
 
 using DocConversionService.Application.Configuration;
+using DocConversionService.Application.Interfaces;
 using DocConversionService.Domain.Entities;
 using DocConversionService.Domain.Enums;
 using DocConversionService.Domain.Exceptions;
@@ -44,102 +45,26 @@ public class JobOrchestrationService
     {
         var job = ConversionJob.Create(command.FileName, command.RequestedFormat);
         await _repository.AddAsync(job);
+        await _repository.SaveChangesAsync(); // durability floor — row exists even if everything below throws unexpectedly
 
         try
         {
-            // 1. Save source file
-            var sourceKey = $"{job.Id}/source/{command.FileName}";
-            var sourcePath = await _storage.SaveAsync(sourceKey, command.FileContent);
-            job.SourceFilePath = sourcePath;
-            await _repository.SaveChangesAsync();
+            job.SourceFilePath = await _storage.SaveAsync(
+                StorageKeys.Source(job.Id, command.FileName), command.FileContent);
 
-            // 2. Parse
-            var parsedDocument = _parser.Parse(command.FileContent);
+            var parsedDocument = ParseAndRouteFormat(command, job);
 
-            // 3. Format router (fail-fast)
-            if (command.RequestedFormat == OutputFormat.Docx && parsedDocument.HasImages)
-            {
-                throw new UnsupportedFormatException(
-                    "DOCX output is not supported for documents containing images. Use HTML format instead.");
-            }
-
-            job.SetResolvedFormat(command.RequestedFormat);
-
-            // 4. Convert
-            job.TransitionTo(JobStatus.Converting, "Converting document to " + command.RequestedFormat + ".");
-            await _repository.SaveChangesAsync();
-
+            job.TransitionTo(JobStatus.Converting, $"Converting document to {command.RequestedFormat}.");
             var renderer = _renderers[command.RequestedFormat];
-            var fullRenderedContent = renderer.Render(parsedDocument.Elements);
 
-            // 5. Check if splitting is needed
-            if (fullRenderedContent.Length <= _settings.MaxPartSizeBytes)
-            {
-                // No split needed — single part
-                var partKey = $"{job.Id}/parts/part-1.{GetExtension(command.RequestedFormat)}";
-                var partPath = await _storage.SaveAsync(partKey, fullRenderedContent);
+            var parts = await BuildPartsAsync(job, parsedDocument, renderer, command.RequestedFormat);
 
-                job.AddPart(new OutputPart(
-                    job.Id, 1, 1, partPath, fullRenderedContent.Length));
+            job.TransitionTo(JobStatus.ValidatingOutput, "Validating output integrity.");
+            var validationResult = _validator.Validate(parsedDocument, parts);
 
-                // Validate
-                job.TransitionTo(JobStatus.ValidatingOutput, "Validating output integrity.");
-                await _repository.SaveChangesAsync();
-
-                var singlePartResult = new SplitPartResult(1, 1, fullRenderedContent, false, parsedDocument.Elements);
-                var validationResult = _validator.Validate(parsedDocument, new[] { singlePartResult });
-
-                if (!validationResult.IsValid)
-                {
-                    job.TransitionTo(JobStatus.FlaggedForReview,
-                        $"Output validation failed: {validationResult.FailureReason}",
-                        Domain.Enums.ErrorCode.ValidationFailed);
-                }
-                else
-                {
-                    job.TransitionTo(JobStatus.Completed, "Job completed successfully.");
-                }
-            }
-            else
-            {
-                // 6. Split
-                job.TransitionTo(JobStatus.Splitting, "Output exceeds size limit. Splitting into parts.");
-                await _repository.SaveChangesAsync();
-
-                var splitParts = _splitter.Split(parsedDocument, renderer, _settings.MaxPartSizeBytes);
-
-                foreach (var part in splitParts)
-                {
-                    var partKey = $"{job.Id}/parts/part-{part.PartNumber}.{GetExtension(command.RequestedFormat)}";
-                    var partPath = await _storage.SaveAsync(partKey, part.Content);
-
-                    job.AddPart(new OutputPart(
-                        job.Id, part.PartNumber, part.TotalParts,
-                        partPath, part.Content.Length, part.ExceedsSizeLimit));
-                }
-
-                // 7. Validate
-                job.TransitionTo(JobStatus.ValidatingOutput, "Validating output integrity.");
-                await _repository.SaveChangesAsync();
-
-                var validationResult = _validator.Validate(parsedDocument, splitParts);
-
-                if (!validationResult.IsValid)
-                {
-                    job.TransitionTo(JobStatus.FlaggedForReview,
-                        $"Output validation failed: {validationResult.FailureReason}",
-                        Domain.Enums.ErrorCode.ValidationFailed);
-                }
-                else if (splitParts.Any(p => p.ExceedsSizeLimit))
-                {
-                    job.TransitionTo(JobStatus.CompletedWithWarnings,
-                        "Job completed, but one or more parts exceed the size limit.");
-                }
-                else
-                {
-                    job.TransitionTo(JobStatus.Completed, "Job completed successfully.");
-                }
-            }
+            var (finalStatus, finalMessage) = ResolveOutcome(validationResult, parts);
+            job.TransitionTo(finalStatus, finalMessage,
+                finalStatus == JobStatus.FlaggedForReview ? ErrorCode.ValidationFailed : null);
         }
         catch (DocumentProcessingException ex)
         {
@@ -149,11 +74,73 @@ public class JobOrchestrationService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Unexpected error processing job {JobId}", job.Id);
-            job.TransitionTo(JobStatus.Failed, "An unexpected error occurred during processing.", Domain.Enums.ErrorCode.Unknown);
+            job.TransitionTo(JobStatus.Failed, "An unexpected error occurred during processing.", ErrorCode.Unknown);
         }
 
         await _repository.SaveChangesAsync();
         return job.Id;
+    }
+
+    /// <summary>
+    /// Parses the source PDF and applies the format router: DOCX is rejected up front
+    /// if the document contains images, before any rendering work begins.
+    /// </summary>
+    private ParsedDocument ParseAndRouteFormat(SubmitJobCommand command, ConversionJob job)
+    {
+        var parsedDocument = _parser.Parse(command.FileContent);
+
+        if (command.RequestedFormat == OutputFormat.Docx && parsedDocument.HasImages)
+        {
+            throw new UnsupportedFormatException(
+                "DOCX output is not supported for documents containing images. Use HTML format instead.");
+        }
+
+        job.SetResolvedFormat(command.RequestedFormat);
+        return parsedDocument;
+    }
+
+    /// <summary>
+    /// Delegates to the splitter (which itself decides whether splitting is actually needed)
+    /// and persists every resulting part to storage.
+    /// </summary>
+    private async Task<IReadOnlyList<SplitPartResult>> BuildPartsAsync(
+        ConversionJob job, ParsedDocument parsedDocument, IDocumentRenderer renderer, OutputFormat format)
+    {
+        var isSplitExpected = renderer.Render(parsedDocument.Elements).Length > _settings.MaxPartSizeBytes;
+        if (isSplitExpected)
+        {
+            job.TransitionTo(JobStatus.Splitting, "Output exceeds size limit. Splitting into parts.");
+        }
+
+        var parts = _splitter.Split(parsedDocument, renderer, _settings.MaxPartSizeBytes);
+        var extension = GetExtension(format);
+
+        foreach (var part in parts)
+        {
+            var partPath = await _storage.SaveAsync(
+                StorageKeys.Part(job.Id, part.PartNumber, extension), part.Content);
+
+            job.AddPart(new OutputPart(
+                job.Id, part.PartNumber, part.TotalParts, partPath, part.Content.Length, part.ExceedsSizeLimit));
+        }
+
+        return parts;
+    }
+
+    /// <summary>
+    /// Single source of truth for what a completed pipeline run actually means:
+    /// failed validation outranks an oversized part, which outranks a clean success.
+    /// </summary>
+    private static (JobStatus Status, string Message) ResolveOutcome(
+        ValidationResult validation, IReadOnlyList<SplitPartResult> parts)
+    {
+        if (!validation.IsValid)
+            return (JobStatus.FlaggedForReview, $"Output validation failed: {validation.FailureReason}");
+
+        if (parts.Any(p => p.ExceedsSizeLimit))
+            return (JobStatus.CompletedWithWarnings, "Job completed, but one or more parts exceed the size limit.");
+
+        return (JobStatus.Completed, "Job completed successfully.");
     }
 
     private static string GetExtension(OutputFormat format) => format switch

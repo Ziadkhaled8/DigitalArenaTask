@@ -1,8 +1,8 @@
 namespace DocConversionService.Infrastructure.Rendering;
 
 using System.Text;
+using DocConversionService.Application.Interfaces;
 using DocConversionService.Domain.Enums;
-using DocConversionService.Domain.Interfaces;
 using DocConversionService.Domain.Parsing;
 
 public class HtmlDocumentRenderer : IDocumentRenderer

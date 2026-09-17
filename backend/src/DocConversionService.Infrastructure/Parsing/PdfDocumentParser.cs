@@ -1,7 +1,7 @@
 namespace DocConversionService.Infrastructure.Parsing;
 
+using DocConversionService.Application.Interfaces;
 using DocConversionService.Domain.Exceptions;
-using DocConversionService.Domain.Interfaces;
 using DocConversionService.Domain.Parsing;
 using UglyToad.PdfPig;
 using UglyToad.PdfPig.Content;

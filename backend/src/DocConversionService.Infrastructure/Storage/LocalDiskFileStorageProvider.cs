@@ -1,6 +1,6 @@
 namespace DocConversionService.Infrastructure.Storage;
 
-using DocConversionService.Domain.Interfaces;
+using DocConversionService.Application.Interfaces;
 using Microsoft.Extensions.Options;
 
 public class LocalDiskFileStorageProvider : IFileStorageProvider

@@ -1,7 +1,7 @@
 namespace DocConversionService.Infrastructure.Persistence;
 
+using DocConversionService.Application.Interfaces;
 using DocConversionService.Domain.Entities;
-using DocConversionService.Domain.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 public class JobRepository : IJobRepository
@@ -35,6 +35,27 @@ public class JobRepository : IJobRepository
 
     public async Task SaveChangesAsync()
     {
+        // EF Core 9 bug workaround: when a new JobEvent or OutputPart is added to
+        // a ConversionJob's private backing collection (_events / _parts) via
+        // _events.Add(new JobEvent(...)), EF discovers it during DetectChanges and
+        // assigns it EntityState.Modified (because its GUID is non-default, which
+        // EF interprets as "this entity already exists in the store").
+        // This causes a failing UPDATE against a row that was never inserted.
+        //
+        // JobEvent and OutputPart are immutable/append-only — they are NEVER
+        // updated after initial creation. So Modified is always wrong for these
+        // types: it always means EF misidentified a brand-new entity. We correct
+        // it to Added before persisting.
+        _dbContext.ChangeTracker.DetectChanges();
+
+        foreach (var entry in _dbContext.ChangeTracker.Entries()
+            .Where(e => e.State == EntityState.Modified
+                     && (e.Entity is JobEvent || e.Entity is OutputPart))
+            .ToList())
+        {
+            entry.State = EntityState.Added;
+        }
+
         await _dbContext.SaveChangesAsync();
     }
 }

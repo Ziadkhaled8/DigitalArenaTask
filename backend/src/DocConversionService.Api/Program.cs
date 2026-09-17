@@ -1,8 +1,8 @@
 using DocConversionService.Api.Middleware;
 using DocConversionService.Application.Configuration;
+using DocConversionService.Application.Interfaces;
 using DocConversionService.Application.Jobs;
 using DocConversionService.Domain.Enums;
-using DocConversionService.Domain.Interfaces;
 using DocConversionService.Infrastructure.Parsing;
 using DocConversionService.Infrastructure.Persistence;
 using DocConversionService.Infrastructure.Rendering;

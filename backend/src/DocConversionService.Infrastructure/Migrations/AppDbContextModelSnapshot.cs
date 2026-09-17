@@ -15,7 +15,7 @@ namespace DocConversionService.Infrastructure.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "8.0.11");
+            modelBuilder.HasAnnotation("ProductVersion", "9.0.2");
 
             modelBuilder.Entity("DocConversionService.Domain.Entities.ConversionJob", b =>
                 {
@@ -66,7 +66,7 @@ namespace DocConversionService.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("ConversionJobs");
+                    b.ToTable("ConversionJobs", (string)null);
                 });
 
             modelBuilder.Entity("DocConversionService.Domain.Entities.JobEvent", b =>
@@ -99,7 +99,7 @@ namespace DocConversionService.Infrastructure.Migrations
 
                     b.HasIndex("JobId");
 
-                    b.ToTable("JobEvents");
+                    b.ToTable("JobEvents", (string)null);
                 });
 
             modelBuilder.Entity("DocConversionService.Domain.Entities.OutputPart", b =>
@@ -132,7 +132,7 @@ namespace DocConversionService.Infrastructure.Migrations
 
                     b.HasIndex("JobId");
 
-                    b.ToTable("OutputParts");
+                    b.ToTable("OutputParts", (string)null);
                 });
 
             modelBuilder.Entity("DocConversionService.Domain.Entities.JobEvent", b =>

@@ -1,6 +1,6 @@
 namespace DocConversionService.Infrastructure.Splitting;
 
-using DocConversionService.Domain.Interfaces;
+using DocConversionService.Application.Interfaces;
 using DocConversionService.Domain.Parsing;
 
 public class DocumentSplitter : IDocumentSplitter
@@ -19,20 +19,31 @@ public class DocumentSplitter : IDocumentSplitter
             {
                 if (currentElements.Count == 1)
                 {
-                    // Single element exceeds limit — allow it but flag
+                    // Single element exceeds limit on its own — allow it but flag
                     parts.Add((new List<DocumentElement>(currentElements), rendered, true));
                     currentElements.Clear();
                 }
                 else
                 {
-                    // Remove the element that pushed it over
+                    // Remove the element that pushed it over and emit previous elements
                     currentElements.RemoveAt(currentElements.Count - 1);
                     var partContent = renderer.Render(currentElements);
-                    parts.Add((new List<DocumentElement>(currentElements), partContent, false));
+                    parts.Add((new List<DocumentElement>(currentElements), partContent, partContent.Length > limitBytes));
 
-                    // Start new part with the element that was removed
-                    currentElements.Clear();
-                    currentElements.Add(element);
+                    // Check if the removed element exceeds the limit on its own
+                    var elementContent = renderer.Render(new[] { element });
+                    if (elementContent.Length > limitBytes)
+                    {
+                        // Unsplittable single element exceeds limit — emit it as its own flagged part
+                        parts.Add((new List<DocumentElement> { element }, elementContent, true));
+                        currentElements.Clear();
+                    }
+                    else
+                    {
+                        // Start new part with this element
+                        currentElements.Clear();
+                        currentElements.Add(element);
+                    }
                 }
             }
         }
@@ -41,8 +52,7 @@ public class DocumentSplitter : IDocumentSplitter
         if (currentElements.Count > 0)
         {
             var finalContent = renderer.Render(currentElements);
-            bool exceedsLimit = finalContent.Length > limitBytes;
-            parts.Add((new List<DocumentElement>(currentElements), finalContent, exceedsLimit));
+            parts.Add((new List<DocumentElement>(currentElements), finalContent, finalContent.Length > limitBytes));
         }
 
         int totalParts = parts.Count;
