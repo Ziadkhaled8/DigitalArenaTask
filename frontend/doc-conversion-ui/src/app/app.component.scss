@@ -3,8 +3,8 @@
   display: flex;
   flex-direction: column;
   background: radial-gradient(circle at top right, rgba(99, 102, 241, 0.08) 0%, transparent 40%),
-              radial-gradient(circle at bottom left, rgba(16, 185, 129, 0.05) 0%, transparent 40%),
-              #0b0f19;
+    radial-gradient(circle at bottom left, rgba(16, 185, 129, 0.05) 0%, transparent 40%),
+    #0b0f19;
   color: #f8fafc;
 }
 
@@ -107,31 +107,20 @@
   }
 }
 
-.system-status {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 12px;
-  background: rgba(16, 185, 129, 0.1);
-  border: 1px solid rgba(16, 185, 129, 0.25);
-  border-radius: 9999px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: #34d399;
 
-  .live-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: #10b981;
-    box-shadow: 0 0 6px #10b981;
-    animation: live-pulse 2s infinite;
-  }
-}
 
 @keyframes live-pulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.4; transform: scale(0.85); }
+
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.4;
+    transform: scale(0.85);
+  }
 }
 
 .app-main {
@@ -158,12 +147,6 @@
     gap: 16px;
   }
 
-  .footer-badges {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
-  }
 
   .tech-pill {
     padding: 3px 10px;

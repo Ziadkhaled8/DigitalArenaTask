@@ -11,6 +11,8 @@ import { JobStatus } from '../../core/models/job-status.enum';
 })
 export class StatusBadgeComponent {
   @Input() status: JobStatus | undefined;
+  @Input() customLabel?: string;
+  @Input() disablePulse = false;
 
   get badgeClass(): string {
     if (!this.status) return 'badge-received';
@@ -18,10 +20,13 @@ export class StatusBadgeComponent {
   }
 
   get indicatorClass(): string {
-    return 'indicator-active';
+    return this.disablePulse ? 'no-pulse' : 'indicator-active';
   }
 
   get label(): string {
+    if (this.customLabel) {
+      return this.customLabel;
+    }
     switch (this.status) {
       case 'Received': return 'Received';
       case 'Converting': return 'Converting';

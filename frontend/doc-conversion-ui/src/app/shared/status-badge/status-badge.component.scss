@@ -12,10 +12,22 @@
   transition: all 0.2s ease;
   border: 1px solid transparent;
 
+  &.pulse-stopped {
+    .indicator {
+      animation: none !important;
+      box-shadow: none !important;
+    }
+  }
+
   .indicator {
     width: 7px;
     height: 7px;
     border-radius: 50%;
+
+    &.no-pulse {
+      animation: none !important;
+      box-shadow: none !important;
+    }
   }
 
   // Status variants
