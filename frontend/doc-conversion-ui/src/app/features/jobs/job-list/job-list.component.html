@@ -9,19 +9,9 @@
     </div>
     <div class="header-actions">
       <button class="refresh-btn" (click)="loadJobs()" [disabled]="isLoading" title="Refresh job list">
-        <svg
-          class="refresh-icon"
-          [class.spinning]="isLoading"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-          />
+        <svg class="refresh-icon" [class.spinning]="isLoading" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
         </svg>
         <span>Refresh</span>
       </button>
@@ -62,19 +52,10 @@
   <div class="filter-bar">
     <div class="search-box">
       <svg class="search-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-        />
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
       </svg>
-      <input
-        type="text"
-        placeholder="Search by file name or ID..."
-        [(ngModel)]="searchQuery"
-        class="search-input"
-      />
+      <input type="text" placeholder="Search by file name or ID..." [(ngModel)]="searchQuery" class="search-input" />
     </div>
 
     <div class="status-filter">
@@ -94,119 +75,102 @@
 
   <!-- Error State -->
   @if (errorMessage) {
-    <div class="error-banner">
-      <svg class="error-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-        />
-      </svg>
-      <span>{{ errorMessage }}</span>
-    </div>
+  <div class="error-banner">
+    <svg class="error-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+        d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+    <span>{{ errorMessage }}</span>
+  </div>
   }
 
   <!-- Jobs Table -->
   <div class="table-card">
     @if (isLoading && jobs.length === 0) {
-      <div class="loading-state">
-        <div class="spinner"></div>
-        <span>Loading document conversion history...</span>
-      </div>
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <span>Loading document conversion history...</span>
+    </div>
     } @else if (filteredJobs.length === 0) {
-      <div class="empty-state">
-        <div class="empty-icon-wrapper">
-          <svg class="empty-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="1.5"
-              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-            />
-          </svg>
-        </div>
-        <h3>No jobs found</h3>
-        <p>
-          {{
-            jobs.length === 0
-              ? 'No document conversion jobs have been run yet.'
-              : 'No jobs match your current search or filter criteria.'
-          }}
-        </p>
-        @if (jobs.length === 0) {
-          <a routerLink="/jobs/submit" class="primary-btn mt-2">Submit First Job</a>
-        }
+    <div class="empty-state">
+      <div class="empty-icon-wrapper">
+        <svg class="empty-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
       </div>
+      <h3>No jobs found</h3>
+      <p>
+        {{
+        jobs.length === 0
+        ? 'No document conversion jobs have been run yet.'
+        : 'No jobs match your current search or filter criteria.'
+        }}
+      </p>
+      @if (jobs.length === 0) {
+      <a routerLink="/jobs/submit" class="primary-btn mt-2">Submit First Job</a>
+      }
+    </div>
     } @else {
-      <div class="table-responsive">
-        <table class="jobs-table">
-          <thead>
-            <tr>
-              <th>Document</th>
-              <th>Format</th>
-              <th>Status</th>
-              <th>Submitted</th>
-              <th>Completed</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (job of filteredJobs; track job.id) {
-              <tr [routerLink]="['/jobs', job.id]" class="clickable-row">
-                <td>
-                  <div class="file-col">
-                    <div class="file-icon-box">
-                      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
-                        />
-                      </svg>
-                    </div>
-                    <div class="file-info-text">
-                      <span class="job-filename" [title]="job.sourceFileName">{{ job.sourceFileName }}</span>
-                      <span class="job-id">{{ job.id.substring(0, 8) }}...</span>
-                    </div>
-                  </div>
-                </td>
-                <td>
-                  <div class="format-cell">
-                    <span class="req-format">{{ job.requestedFormat }}</span>
-                    @if (job.resolvedFormat && job.resolvedFormat !== job.requestedFormat) {
-                      <span class="resolved-arrow">→</span>
-                      <span class="res-format">{{ job.resolvedFormat }}</span>
-                    }
-                  </div>
-                </td>
-                <td>
-                  <app-status-badge [status]="job.status"></app-status-badge>
-                </td>
-                <td class="time-cell">
-                  {{ job.createdAt | date:'short' }}
-                </td>
-                <td class="time-cell">
-                  {{ job.completedAt ? (job.completedAt | date:'shortTime') : '—' }}
-                </td>
-                <td>
-                  <a
-                    [routerLink]="['/jobs', job.id]"
-                    class="view-link"
-                    (click)="$event.stopPropagation()"
-                  >
-                    View Details
-                    <svg class="chevron-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                    </svg>
-                  </a>
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
+    <div class="table-responsive">
+      <table class="jobs-table">
+        <thead>
+          <tr>
+            <th>Document</th>
+            <th>Format</th>
+            <th>Status</th>
+            <th>Submitted</th>
+            <th>Completed</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (job of filteredJobs; track job.id) {
+          <tr [routerLink]="['/jobs', job.id]" class="clickable-row">
+            <td>
+              <div class="file-col">
+                <div class="file-icon-box">
+                  <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                  </svg>
+                </div>
+                <div class="file-info-text">
+                  <span class="job-filename" [title]="job.sourceFileName">{{ job.sourceFileName }}</span>
+                </div>
+              </div>
+            </td>
+            <td>
+              <div class="format-cell">
+                <span class="req-format">{{ job.requestedFormat }}</span>
+                @if (job.resolvedFormat && job.resolvedFormat !== job.requestedFormat) {
+                <span class="resolved-arrow">→</span>
+                <span class="res-format">{{ job.resolvedFormat }}</span>
+                }
+              </div>
+            </td>
+            <td>
+              <app-status-badge [status]="job.status"></app-status-badge>
+            </td>
+            <td class="time-cell">
+              {{ job.createdAt | date:'short' }}
+            </td>
+            <td class="time-cell">
+              {{ job.completedAt ? (job.completedAt | date:'shortTime') : '—' }}
+            </td>
+            <td>
+              <a [routerLink]="['/jobs', job.id]" class="view-link" (click)="$event.stopPropagation()">
+                View Details
+                <svg class="chevron-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
+              </a>
+            </td>
+          </tr>
+          }
+        </tbody>
+      </table>
+    </div>
     }
   </div>
 </div>

@@ -408,6 +408,11 @@
           &.marker-completedwithwarnings { background: #f59e0b; box-shadow: 0 0 6px #f59e0b; }
           &.marker-flaggedforreview { background: #f97316; box-shadow: 0 0 6px #f97316; }
           &.marker-failed { background: #ef4444; box-shadow: 0 0 6px #ef4444; }
+
+          &.no-pulse {
+            box-shadow: none;
+            animation: none !important;
+          }
         }
 
         .timeline-line {

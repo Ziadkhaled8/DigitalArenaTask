@@ -39,9 +39,7 @@ export class JobListComponent implements OnInit {
       error: (err) => {
         this.isLoading = false;
         this.errorMessage =
-          'Unable to connect to Document Conversion API service at ' +
-          this.jobService.getPartDownloadUrl('test', 1).split('/parts')[0] +
-          '. Make sure the backend is running.';
+          'Unable to connect to Document Conversion API service. Make sure the backend is running.';
       }
     });
   }

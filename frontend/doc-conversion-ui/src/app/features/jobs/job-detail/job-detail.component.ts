@@ -52,6 +52,21 @@ export class JobDetailComponent implements OnInit {
     return this.jobService.getPartDownloadUrl(this.jobId, partNumber);
   }
 
+  get hasCompleted(): boolean {
+    return this.job?.status === 'Completed' || this.job?.status === 'CompletedWithWarnings';
+  }
+
+  getEventLabel(status: string): string | undefined {
+    const hasValidated = this.job?.events.some((e) => e.status === 'ValidatingOutput') || this.hasCompleted;
+    if (status === 'Converting' && hasValidated) return 'Converted';
+    if (status === 'ValidatingOutput' && this.hasCompleted) return 'Validated';
+    return undefined;
+  }
+
+  isPulseDisabled(status: string): boolean {
+    return !!this.getEventLabel(status) || this.hasCompleted || this.job?.status === 'Failed';
+  }
+
   getMarkerClass(status: string): string {
     return `marker-${status.toLowerCase()}`;
   }

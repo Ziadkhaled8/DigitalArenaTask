@@ -211,7 +211,11 @@
             @for (event of job.events; track event.id; let last = $last) {
               <div class="timeline-item" [class.is-last]="last">
                 <div class="timeline-marker-wrapper">
-                  <div class="timeline-marker" [ngClass]="getMarkerClass(event.status)"></div>
+                  <div
+                    class="timeline-marker"
+                    [ngClass]="getMarkerClass(event.status)"
+                    [class.no-pulse]="isPulseDisabled(event.status)"
+                  ></div>
                   @if (!last) {
                     <div class="timeline-line"></div>
                   }
@@ -219,7 +223,11 @@
 
                 <div class="timeline-content">
                   <div class="timeline-top">
-                    <app-status-badge [status]="event.status"></app-status-badge>
+                    <app-status-badge
+                      [status]="event.status"
+                      [customLabel]="getEventLabel(event.status)"
+                      [disablePulse]="isPulseDisabled(event.status)"
+                    ></app-status-badge>
                     <span class="timeline-time">{{ event.timestamp | date:'HH:mm:ss.SSS' }}</span>
                   </div>
                   <p class="timeline-message">{{ event.message }}</p>
