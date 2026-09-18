@@ -106,16 +106,14 @@ public class JobOrchestrationService
     private async Task<IReadOnlyList<SplitPartResult>> BuildPartsAsync(
         ConversionJob job, ParsedDocument parsedDocument, IDocumentRenderer renderer, OutputFormat format)
     {
-        var isSplitExpected = renderer.Render(parsedDocument.Elements).Length > _settings.MaxPartSizeBytes;
-        if (isSplitExpected)
+        var splitResult = _splitter.Split(parsedDocument, renderer, _settings.MaxPartSizeBytes); 
+        if (splitResult.WasSplit)
         {
             job.TransitionTo(JobStatus.Splitting, "Output exceeds size limit. Splitting into parts.");
         }
-
-        var parts = _splitter.Split(parsedDocument, renderer, _settings.MaxPartSizeBytes);
         var extension = GetExtension(format);
 
-        foreach (var part in parts)
+        foreach (var part in splitResult.Parts)
         {
             var partPath = await _storage.SaveAsync(
                 StorageKeys.Part(job.Id, part.PartNumber, extension), part.Content);
@@ -124,7 +122,7 @@ public class JobOrchestrationService
                 job.Id, part.PartNumber, part.TotalParts, partPath, part.Content.Length, part.ExceedsSizeLimit));
         }
 
-        return parts;
+        return splitResult.Parts;
     }
 
     /// <summary>

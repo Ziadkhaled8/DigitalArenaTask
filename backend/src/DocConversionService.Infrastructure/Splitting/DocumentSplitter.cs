@@ -2,11 +2,26 @@ namespace DocConversionService.Infrastructure.Splitting;
 
 using DocConversionService.Application.Interfaces;
 using DocConversionService.Domain.Parsing;
+using static DocConversionService.Application.Interfaces.IDocumentSplitter;
 
 public class DocumentSplitter : IDocumentSplitter
 {
-    public IReadOnlyList<SplitPartResult> Split(ParsedDocument document, IDocumentRenderer renderer, long limitBytes)
+    public SplitResult Split(ParsedDocument document, IDocumentRenderer renderer, long limitBytes)
     {
+
+        var fullContent = renderer.Render(document.Elements);
+        if (fullContent.Length <= limitBytes)
+        {
+            var singlePart = new SplitPartResult(
+                PartNumber: 1,
+                TotalParts: 1,
+                Content: fullContent,
+                ExceedsSizeLimit: false,
+                Elements: document.Elements);
+
+            return new SplitResult(new[] { singlePart }, WasSplit: false);
+        }
+
         var parts = new List<(List<DocumentElement> Elements, byte[] Content, bool ExceedsSizeLimit)>();
         var currentElements = new List<DocumentElement>();
 
@@ -56,12 +71,14 @@ public class DocumentSplitter : IDocumentSplitter
         }
 
         int totalParts = parts.Count;
-        return parts.Select((p, i) => new SplitPartResult(
+        var result = parts.Select((p, i) => new SplitPartResult(
             PartNumber: i + 1,
             TotalParts: totalParts,
             Content: p.Content,
             ExceedsSizeLimit: p.ExceedsSizeLimit,
             Elements: p.Elements.AsReadOnly()
         )).ToList();
+
+        return new SplitResult(result, WasSplit: true);
     }
 }
