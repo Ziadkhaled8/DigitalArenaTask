@@ -33,11 +33,11 @@ public class DocumentSplitterTests
             .Returns(new byte[100]);
 
         // Act
-        var parts = _splitter.Split(doc, _renderer, limitBytes: 1000);
+        var splitResult = _splitter.Split(doc, _renderer, limitBytes: 1000);
 
         // Assert
-        Assert.Single(parts);
-        var part = parts[0];
+        Assert.Single(splitResult.Parts);
+        var part = splitResult.Parts[0];
         Assert.Equal(1, part.PartNumber);
         Assert.Equal(1, part.TotalParts);
         Assert.False(part.ExceedsSizeLimit);
@@ -64,23 +64,23 @@ public class DocumentSplitterTests
             });
 
         // Limit is 1000 bytes. 1 element = 600 (fits), 2 elements = 1200 (exceeds) -> split!
-        var parts = _splitter.Split(doc, _renderer, limitBytes: 1000);
+        var splitResult = _splitter.Split(doc, _renderer, limitBytes: 1000);
 
         // Assert
-        Assert.Equal(4, parts.Count);
+        Assert.Equal(4, splitResult.Parts.Count);
         for (int i = 0; i < 4; i++)
         {
-            Assert.Equal(i + 1, parts[i].PartNumber);
-            Assert.Equal(4, parts[i].TotalParts);
-            Assert.False(parts[i].ExceedsSizeLimit);
-            Assert.Single(parts[i].Elements);
+            Assert.Equal(i + 1, splitResult.Parts[i].PartNumber);
+            Assert.Equal(4, splitResult.Parts[i].TotalParts);
+            Assert.False(splitResult.Parts[i].ExceedsSizeLimit);
+            Assert.Single(splitResult.Parts[i].Elements);
         }
 
         // Verify preserved order
-        Assert.Same(el1, parts[0].Elements[0]);
-        Assert.Same(el2, parts[1].Elements[0]);
-        Assert.Same(el3, parts[2].Elements[0]);
-        Assert.Same(el4, parts[3].Elements[0]);
+        Assert.Same(el1, splitResult.Parts[0].Elements[0]);
+        Assert.Same(el2, splitResult.Parts[1].Elements[0]);
+        Assert.Same(el3, splitResult.Parts[2].Elements[0]);
+        Assert.Same(el4, splitResult.Parts[3].Elements[0]);
     }
 
     [Fact]
@@ -95,11 +95,11 @@ public class DocumentSplitterTests
             .Returns(new byte[5000]);
 
         // Limit is 2000 bytes
-        var parts = _splitter.Split(doc, _renderer, limitBytes: 2000);
+        var splitResult = _splitter.Split(doc, _renderer, limitBytes: 2000);
 
         // Assert
-        Assert.Single(parts);
-        var part = parts[0];
+        Assert.Single(splitResult.Parts);
+        var part = splitResult.Parts[0];
         Assert.Equal(1, part.PartNumber);
         Assert.Equal(1, part.TotalParts);
         Assert.True(part.ExceedsSizeLimit);
@@ -119,14 +119,14 @@ public class DocumentSplitterTests
         _renderer.Render(Arg.Is<IReadOnlyList<DocumentElement>>(l => l.Count == 2)).Returns(new byte[2000]);
 
         // Limit is exactly 2000 bytes
-        var parts = _splitter.Split(doc, _renderer, limitBytes: 2000);
+        var splitResult = _splitter.Split(doc, _renderer, limitBytes: 2000);
 
         // Assert: boundary rule <= limitBytes means both elements remain in part 1
-        Assert.Single(parts);
-        Assert.Equal(1, parts[0].PartNumber);
-        Assert.Equal(1, parts[0].TotalParts);
-        Assert.False(parts[0].ExceedsSizeLimit);
-        Assert.Equal(2, parts[0].Elements.Count);
+        Assert.Single(splitResult.Parts);
+        Assert.Equal(1, splitResult.Parts[0].PartNumber);
+        Assert.Equal(1, splitResult.Parts[0].TotalParts);
+        Assert.False(splitResult.Parts[0].ExceedsSizeLimit);
+        Assert.Equal(2, splitResult.Parts[0].Elements.Count);
     }
 
     [Fact]
@@ -153,30 +153,30 @@ public class DocumentSplitterTests
             });
 
         // Act: 2000 limit
-        var parts = _splitter.Split(doc, _renderer, limitBytes: 2000);
+        var splitResult = _splitter.Split(doc, _renderer, limitBytes: 2000);
 
         // Assert:
         // Part 1: el1 (500B, ExceedsSizeLimit: false)
         // Part 2: hugeImage (5000B, ExceedsSizeLimit: true)
         // Part 3: el2 (400B, ExceedsSizeLimit: false)
-        Assert.Equal(3, parts.Count);
+        Assert.Equal(3, splitResult.Parts.Count);
 
-        Assert.Equal(1, parts[0].PartNumber);
-        Assert.False(parts[0].ExceedsSizeLimit);
-        Assert.Equal(500, parts[0].Content.Length);
-        Assert.Single(parts[0].Elements);
-        Assert.Same(el1, parts[0].Elements[0]);
+        Assert.Equal(1, splitResult.Parts[0].PartNumber);
+        Assert.False(splitResult.Parts[0].ExceedsSizeLimit);
+        Assert.Equal(500, splitResult.Parts[0].Content.Length);
+        Assert.Single(splitResult.Parts[0].Elements);
+        Assert.Same(el1, splitResult.Parts[0].Elements[0]);
 
-        Assert.Equal(2, parts[1].PartNumber);
-        Assert.True(parts[1].ExceedsSizeLimit);
-        Assert.Equal(5000, parts[1].Content.Length);
-        Assert.Single(parts[1].Elements);
-        Assert.Same(hugeImage, parts[1].Elements[0]);
+        Assert.Equal(2, splitResult.Parts[1].PartNumber);
+        Assert.True(splitResult.Parts[1].ExceedsSizeLimit);
+        Assert.Equal(5000, splitResult.Parts[1].Content.Length);
+        Assert.Single(splitResult.Parts[1].Elements);
+        Assert.Same(hugeImage, splitResult.Parts[1].Elements[0]);
 
-        Assert.Equal(3, parts[2].PartNumber);
-        Assert.False(parts[2].ExceedsSizeLimit);
-        Assert.Equal(400, parts[2].Content.Length);
-        Assert.Single(parts[2].Elements);
-        Assert.Same(el2, parts[2].Elements[0]);
+        Assert.Equal(3, splitResult.Parts[2].PartNumber);
+        Assert.False(splitResult.Parts[2].ExceedsSizeLimit);
+        Assert.Equal(400, splitResult.Parts[2].Content.Length);
+        Assert.Single(splitResult.Parts[2].Elements);
+        Assert.Same(el2, splitResult.Parts[2].Elements[0]);
     }
 }

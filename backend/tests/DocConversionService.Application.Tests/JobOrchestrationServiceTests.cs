@@ -11,6 +11,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using NSubstitute;
 using Xunit;
+using static DocConversionService.Application.Interfaces.IDocumentSplitter;
 
 public class JobOrchestrationServiceTests
 {
@@ -61,8 +62,14 @@ public class JobOrchestrationServiceTests
         var renderedBytes = new byte[1024]; // 1KB <= 2MB limit
         _htmlRenderer.Render(Arg.Any<IReadOnlyList<DocumentElement>>()).Returns(renderedBytes);
 
-        _validator.Validate(Arg.Any<ParsedDocument>(), Arg.Any<IReadOnlyList<SplitPartResult>>())
-            .Returns(new ValidationResult(true, null));
+        // Splitter is always called; WasSplit=false means no Splitting transition
+        var splitResult = new SplitResult(new List<SplitPartResult>
+        {
+            new(1, 1, renderedBytes, false, elements)
+        }, WasSplit: false);
+        _splitter.Split(parsedDoc, _htmlRenderer, _settings.Value.MaxPartSizeBytes).Returns(splitResult);
+
+        _validator.Validate(parsedDoc, splitResult.Parts).Returns(new ValidationResult(true, null));
 
         ConversionJob? savedJob = null;
         await _repository.AddAsync(Arg.Do<ConversionJob>(j => savedJob = j));
@@ -83,7 +90,7 @@ public class JobOrchestrationServiceTests
         Assert.Equal(1, savedJob.Parts.First().TotalParts);
         Assert.False(savedJob.Parts.First().ExceedsSizeLimit);
 
-        _splitter.DidNotReceiveWithAnyArgs().Split(default!, default!, default);
+        _splitter.Received(1).Split(parsedDoc, _htmlRenderer, _settings.Value.MaxPartSizeBytes);
         await _storage.Received(2).SaveAsync(Arg.Any<string>(), Arg.Any<byte[]>()); // source + 1 part
     }
 
@@ -102,14 +109,14 @@ public class JobOrchestrationServiceTests
         var oversizedBytes = new byte[3 * 1024 * 1024]; // 3MB > 2MB limit
         _htmlRenderer.Render(Arg.Any<IReadOnlyList<DocumentElement>>()).Returns(oversizedBytes);
 
-        var splitParts = new List<SplitPartResult>
+        var splitResult = new SplitResult(new List<SplitPartResult>
         {
             new(1, 2, new byte[1024], false, new[] { elements[0] }),
             new(2, 2, new byte[1024], false, new[] { elements[1] })
-        };
-        _splitter.Split(parsedDoc, _htmlRenderer, _settings.Value.MaxPartSizeBytes).Returns(splitParts);
+        }, false);
+        _splitter.Split(parsedDoc, _htmlRenderer, _settings.Value.MaxPartSizeBytes).Returns(splitResult);
 
-        _validator.Validate(parsedDoc, splitParts).Returns(new ValidationResult(true, null));
+        _validator.Validate(parsedDoc, splitResult.Parts).Returns(new ValidationResult(true, null));
 
         ConversionJob? savedJob = null;
         await _repository.AddAsync(Arg.Do<ConversionJob>(j => savedJob = j));
@@ -235,12 +242,12 @@ public class JobOrchestrationServiceTests
         var oversizedBytes = new byte[3 * 1024 * 1024];
         _htmlRenderer.Render(Arg.Any<IReadOnlyList<DocumentElement>>()).Returns(oversizedBytes);
 
-        var splitParts = new List<SplitPartResult>
+        var splitResult = new SplitResult(new List<SplitPartResult>
         {
             new(1, 1, oversizedBytes, true, elements) // ExceedsSizeLimit = true
-        };
-        _splitter.Split(parsedDoc, _htmlRenderer, _settings.Value.MaxPartSizeBytes).Returns(splitParts);
-        _validator.Validate(parsedDoc, splitParts).Returns(new ValidationResult(true, null));
+        }, false);
+        _splitter.Split(parsedDoc, _htmlRenderer, _settings.Value.MaxPartSizeBytes).Returns(splitResult);
+        _validator.Validate(parsedDoc, splitResult.Parts).Returns(new ValidationResult(true, null));
 
         ConversionJob? savedJob = null;
         await _repository.AddAsync(Arg.Do<ConversionJob>(j => savedJob = j));
@@ -268,8 +275,15 @@ public class JobOrchestrationServiceTests
         var renderedBytes = new byte[100];
         _htmlRenderer.Render(Arg.Any<IReadOnlyList<DocumentElement>>()).Returns(renderedBytes);
 
+        // Splitter is always called; single part within limit
+        var splitResult = new SplitResult(new List<SplitPartResult>
+        {
+            new(1, 1, renderedBytes, false, elements)
+        }, WasSplit: false);
+        _splitter.Split(parsedDoc, _htmlRenderer, _settings.Value.MaxPartSizeBytes).Returns(splitResult);
+
         // Validator detects hash mismatch or sequence anomaly
-        _validator.Validate(Arg.Any<ParsedDocument>(), Arg.Any<IReadOnlyList<SplitPartResult>>())
+        _validator.Validate(parsedDoc, splitResult.Parts)
             .Returns(new ValidationResult(false, "Canonical content hash mismatch across parts"));
 
         ConversionJob? savedJob = null;
