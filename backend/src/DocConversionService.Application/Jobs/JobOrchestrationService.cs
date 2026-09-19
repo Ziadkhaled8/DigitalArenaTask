@@ -41,23 +41,25 @@ public class JobOrchestrationService
         _logger = logger;
     }
 
-    public async Task<Guid> SubmitAndProcessAsync(SubmitJobCommand command)
+    public async Task<Guid> SubmitAndProcessAsync(
+        SubmitJobCommand command,
+        CancellationToken cancellationToken = default)
     {
         var job = ConversionJob.Create(command.FileName, command.RequestedFormat);
-        await _repository.AddAsync(job);
-        await _repository.SaveChangesAsync(); // durability floor — row exists even if everything below throws unexpectedly
 
         try
         {
-            job.SourceFilePath = await _storage.SaveAsync(
-                StorageKeys.Source(job.Id, command.FileName), command.FileContent);
+            await _repository.AddAsync(job, cancellationToken);
+            await _repository.SaveChangesAsync(cancellationToken); // durability floor — row exists even if everything below throws unexpectedly
+
+            job.SourceFilePath = await SaveSourceFileAsync(job.Id, command, cancellationToken);
 
             var parsedDocument = ParseAndRouteFormat(command, job);
 
             job.TransitionTo(JobStatus.Converting, $"Converting document to {command.RequestedFormat}.");
             var renderer = _renderers[command.RequestedFormat];
 
-            var parts = await BuildPartsAsync(job, parsedDocument, renderer, command.RequestedFormat);
+            var parts = await BuildPartsAsync(job, parsedDocument, renderer, command.RequestedFormat, cancellationToken);
 
             job.TransitionTo(JobStatus.ValidatingOutput, "Validating output integrity.");
             var validationResult = _validator.Validate(parsedDocument, parts);
@@ -65,6 +67,17 @@ public class JobOrchestrationService
             var (finalStatus, finalMessage) = ResolveOutcome(validationResult, parts);
             job.TransitionTo(finalStatus, finalMessage,
                 finalStatus == JobStatus.FlaggedForReview ? ErrorCode.ValidationFailed : null);
+        }
+        catch (OperationCanceledException)
+        {
+            // Expected — the client disconnected mid-request.  Transition to Failed so
+            // the persisted row reflects what happened, then save with a fresh
+            // CancellationToken.None because the original token is already cancelled
+            // and cannot be reused for I/O.
+            _logger.LogInformation("Processing cancelled for job {JobId} (client disconnected).", job.Id);
+            job.TransitionTo(JobStatus.Failed, "Processing was cancelled.", ErrorCode.Cancelled);
+            await _repository.SaveChangesAsync(CancellationToken.None);
+            return job.Id;
         }
         catch (DocumentProcessingException ex)
         {
@@ -80,6 +93,13 @@ public class JobOrchestrationService
         await _repository.SaveChangesAsync();
         return job.Id;
     }
+
+    /// <summary>
+    /// Persists the original source file to storage and returns its storage key.
+    /// </summary>
+    private Task<string> SaveSourceFileAsync(
+        Guid jobId, SubmitJobCommand command, CancellationToken cancellationToken) =>
+        _storage.SaveAsync(StorageKeys.Source(jobId, command.FileName), command.FileContent, cancellationToken);
 
     /// <summary>
     /// Parses the source PDF and applies the format router: DOCX is rejected up front
@@ -104,9 +124,10 @@ public class JobOrchestrationService
     /// and persists every resulting part to storage.
     /// </summary>
     private async Task<IReadOnlyList<SplitPartResult>> BuildPartsAsync(
-        ConversionJob job, ParsedDocument parsedDocument, IDocumentRenderer renderer, OutputFormat format)
+        ConversionJob job, ParsedDocument parsedDocument, IDocumentRenderer renderer, OutputFormat format,
+        CancellationToken cancellationToken)
     {
-        var splitResult = _splitter.Split(parsedDocument, renderer, _settings.MaxPartSizeBytes); 
+        var splitResult = _splitter.Split(parsedDocument, renderer, _settings.MaxPartSizeBytes);
         if (splitResult.WasSplit)
         {
             job.TransitionTo(JobStatus.Splitting, "Output exceeds size limit. Splitting into parts.");
@@ -116,7 +137,7 @@ public class JobOrchestrationService
         foreach (var part in splitResult.Parts)
         {
             var partPath = await _storage.SaveAsync(
-                StorageKeys.Part(job.Id, part.PartNumber, extension), part.Content);
+                StorageKeys.Part(job.Id, part.PartNumber, extension), part.Content, cancellationToken);
 
             job.AddPart(new OutputPart(
                 job.Id, part.PartNumber, part.TotalParts, partPath, part.Content.Length, part.ExceedsSizeLimit));

@@ -12,24 +12,24 @@ public class LocalDiskFileStorageProvider : IFileStorageProvider
         _rootPath = Path.GetFullPath(settings.Value.RootPath);
     }
 
-    public async Task<string> SaveAsync(string key, byte[] content)
+    public async Task<string> SaveAsync(string key, byte[] content, CancellationToken cancellationToken = default)
     {
         var filePath = GetFullPath(key);
         var directory = Path.GetDirectoryName(filePath)!;
         Directory.CreateDirectory(directory);
-        await File.WriteAllBytesAsync(filePath, content);
+        await File.WriteAllBytesAsync(filePath, content, cancellationToken);
         return key;
     }
 
-    public async Task<byte[]> GetAsync(string key)
+    public async Task<byte[]> GetAsync(string key, CancellationToken cancellationToken = default)
     {
         var filePath = GetFullPath(key);
         if (!File.Exists(filePath))
             throw new FileNotFoundException($"File not found: {key}", key);
-        return await File.ReadAllBytesAsync(filePath);
+        return await File.ReadAllBytesAsync(filePath, cancellationToken);
     }
 
-    public Task DeleteAsync(string key)
+    public Task DeleteAsync(string key, CancellationToken cancellationToken = default)
     {
         var filePath = GetFullPath(key);
         if (File.Exists(filePath))

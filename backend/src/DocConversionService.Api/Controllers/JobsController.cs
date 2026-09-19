@@ -26,7 +26,10 @@ public class JobsController : ControllerBase
 
     [HttpPost]
     [RequestSizeLimit(100_000_000)] // 100MB limit
-    public async Task<IActionResult> SubmitJob(IFormFile file, [FromForm] OutputFormat requestedFormat)
+    public async Task<IActionResult> SubmitJob(
+        IFormFile file,
+        [FromForm] OutputFormat requestedFormat,
+        CancellationToken cancellationToken)
     {
         if (file == null || file.Length == 0)
         {
@@ -34,10 +37,10 @@ public class JobsController : ControllerBase
         }
 
         using var memoryStream = new MemoryStream();
-        await file.CopyToAsync(memoryStream);
+        await file.CopyToAsync(memoryStream, cancellationToken);
         var command = new SubmitJobCommand(memoryStream.ToArray(), file.FileName, requestedFormat);
 
-        var jobId = await _orchestrationService.SubmitAndProcessAsync(command);
+        var jobId = await _orchestrationService.SubmitAndProcessAsync(command, cancellationToken);
         var summary = await _queryService.GetSummaryAsync(jobId);
 
         return Accepted($"/api/jobs/{jobId}", summary);

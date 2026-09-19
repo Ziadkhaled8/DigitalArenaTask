@@ -37,7 +37,7 @@ public class JobOrchestrationServiceTests
             [OutputFormat.Docx] = _docxRenderer
         };
 
-        _storage.SaveAsync(Arg.Any<string>(), Arg.Any<byte[]>())
+        _storage.SaveAsync(Arg.Any<string>(), Arg.Any<byte[]>(), Arg.Any<CancellationToken>())
             .Returns(ci => Task.FromResult(ci.Arg<string>()));
     }
 
@@ -72,13 +72,13 @@ public class JobOrchestrationServiceTests
         _validator.Validate(parsedDoc, splitResult.Parts).Returns(new ValidationResult(true, null));
 
         ConversionJob? savedJob = null;
-        await _repository.AddAsync(Arg.Do<ConversionJob>(j => savedJob = j));
+        await _repository.AddAsync(Arg.Do<ConversionJob>(j => savedJob = j), Arg.Any<CancellationToken>());
 
         var sut = CreateService();
         var command = new SubmitJobCommand(new byte[] { 1, 2, 3 }, "sample.pdf", OutputFormat.Html);
 
         // Act
-        var jobId = await sut.SubmitAndProcessAsync(command);
+        var jobId = await sut.SubmitAndProcessAsync(command, CancellationToken.None);
 
         // Assert
         Assert.NotNull(savedJob);
@@ -91,7 +91,7 @@ public class JobOrchestrationServiceTests
         Assert.False(savedJob.Parts.First().ExceedsSizeLimit);
 
         _splitter.Received(1).Split(parsedDoc, _htmlRenderer, _settings.Value.MaxPartSizeBytes);
-        await _storage.Received(2).SaveAsync(Arg.Any<string>(), Arg.Any<byte[]>()); // source + 1 part
+        await _storage.Received(2).SaveAsync(Arg.Any<string>(), Arg.Any<byte[]>(), Arg.Any<CancellationToken>()); // source + 1 part
     }
 
     [Fact]
@@ -119,13 +119,13 @@ public class JobOrchestrationServiceTests
         _validator.Validate(parsedDoc, splitResult.Parts).Returns(new ValidationResult(true, null));
 
         ConversionJob? savedJob = null;
-        await _repository.AddAsync(Arg.Do<ConversionJob>(j => savedJob = j));
+        await _repository.AddAsync(Arg.Do<ConversionJob>(j => savedJob = j), Arg.Any<CancellationToken>());
 
         var sut = CreateService();
         var command = new SubmitJobCommand(new byte[] { 1, 2, 3 }, "large.pdf", OutputFormat.Html);
 
         // Act
-        var jobId = await sut.SubmitAndProcessAsync(command);
+        var jobId = await sut.SubmitAndProcessAsync(command, CancellationToken.None);
 
         // Assert
         Assert.NotNull(savedJob);
@@ -147,13 +147,13 @@ public class JobOrchestrationServiceTests
         _parser.Parse(Arg.Any<byte[]>()).Returns(parsedDoc);
 
         ConversionJob? savedJob = null;
-        await _repository.AddAsync(Arg.Do<ConversionJob>(j => savedJob = j));
+        await _repository.AddAsync(Arg.Do<ConversionJob>(j => savedJob = j), Arg.Any<CancellationToken>());
 
         var sut = CreateService();
         var command = new SubmitJobCommand(new byte[] { 1, 2, 3 }, "with-images.pdf", OutputFormat.Docx);
 
         // Act
-        var jobId = await sut.SubmitAndProcessAsync(command);
+        var jobId = await sut.SubmitAndProcessAsync(command, CancellationToken.None);
 
         // Assert
         Assert.NotNull(savedJob);
@@ -174,13 +174,13 @@ public class JobOrchestrationServiceTests
         _parser.Parse(Arg.Any<byte[]>()).Returns(_ => throw new ScannedDocumentException());
 
         ConversionJob? savedJob = null;
-        await _repository.AddAsync(Arg.Do<ConversionJob>(j => savedJob = j));
+        await _repository.AddAsync(Arg.Do<ConversionJob>(j => savedJob = j), Arg.Any<CancellationToken>());
 
         var sut = CreateService();
         var command = new SubmitJobCommand(new byte[] { 1, 2, 3 }, "scanned.pdf", OutputFormat.Html);
 
         // Act
-        var jobId = await sut.SubmitAndProcessAsync(command);
+        var jobId = await sut.SubmitAndProcessAsync(command, CancellationToken.None);
 
         // Assert
         Assert.NotNull(savedJob);
@@ -196,13 +196,13 @@ public class JobOrchestrationServiceTests
         _parser.Parse(Arg.Any<byte[]>()).Returns(_ => throw new CorruptedFileException("Corrupted PDF"));
 
         ConversionJob? savedJob = null;
-        await _repository.AddAsync(Arg.Do<ConversionJob>(j => savedJob = j));
+        await _repository.AddAsync(Arg.Do<ConversionJob>(j => savedJob = j), Arg.Any<CancellationToken>());
 
         var sut = CreateService();
         var command = new SubmitJobCommand(new byte[] { 1, 2, 3 }, "corrupted.pdf", OutputFormat.Html);
 
         // Act
-        var jobId = await sut.SubmitAndProcessAsync(command);
+        var jobId = await sut.SubmitAndProcessAsync(command, CancellationToken.None);
 
         // Assert
         Assert.NotNull(savedJob);
@@ -217,13 +217,13 @@ public class JobOrchestrationServiceTests
         _parser.Parse(Arg.Any<byte[]>()).Returns(_ => throw new EmptyDocumentException());
 
         ConversionJob? savedJob = null;
-        await _repository.AddAsync(Arg.Do<ConversionJob>(j => savedJob = j));
+        await _repository.AddAsync(Arg.Do<ConversionJob>(j => savedJob = j), Arg.Any<CancellationToken>());
 
         var sut = CreateService();
         var command = new SubmitJobCommand(new byte[] { 1, 2, 3 }, "empty.pdf", OutputFormat.Html);
 
         // Act
-        var jobId = await sut.SubmitAndProcessAsync(command);
+        var jobId = await sut.SubmitAndProcessAsync(command, CancellationToken.None);
 
         // Assert
         Assert.NotNull(savedJob);
@@ -250,13 +250,13 @@ public class JobOrchestrationServiceTests
         _validator.Validate(parsedDoc, splitResult.Parts).Returns(new ValidationResult(true, null));
 
         ConversionJob? savedJob = null;
-        await _repository.AddAsync(Arg.Do<ConversionJob>(j => savedJob = j));
+        await _repository.AddAsync(Arg.Do<ConversionJob>(j => savedJob = j), Arg.Any<CancellationToken>());
 
         var sut = CreateService();
         var command = new SubmitJobCommand(new byte[] { 1 }, "oversized.pdf", OutputFormat.Html);
 
         // Act
-        var jobId = await sut.SubmitAndProcessAsync(command);
+        var jobId = await sut.SubmitAndProcessAsync(command, CancellationToken.None);
 
         // Assert
         Assert.NotNull(savedJob);
@@ -287,18 +287,56 @@ public class JobOrchestrationServiceTests
             .Returns(new ValidationResult(false, "Canonical content hash mismatch across parts"));
 
         ConversionJob? savedJob = null;
-        await _repository.AddAsync(Arg.Do<ConversionJob>(j => savedJob = j));
+        await _repository.AddAsync(Arg.Do<ConversionJob>(j => savedJob = j), Arg.Any<CancellationToken>());
 
         var sut = CreateService();
         var command = new SubmitJobCommand(new byte[] { 1 }, "doc.pdf", OutputFormat.Html);
 
         // Act
-        var jobId = await sut.SubmitAndProcessAsync(command);
+        var jobId = await sut.SubmitAndProcessAsync(command, CancellationToken.None);
 
         // Assert
         Assert.NotNull(savedJob);
         Assert.Equal(JobStatus.FlaggedForReview, savedJob.Status);
         Assert.Equal(ErrorCode.ValidationFailed, savedJob.ErrorCode);
         Assert.Contains("Output validation failed", savedJob.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task SubmitAndProcessAsync_CancelledToken_TransitionsJobToFailedWithCancellationMessageAndDoesNotThrow()
+    {
+        // Arrange
+        // Use an already-cancelled token to simulate a client that disconnected before
+        // processing even started. The very first I/O call (AddAsync) will throw
+        // OperationCanceledException when the token is already cancelled.
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        ConversionJob? savedJob = null;
+        // AddAsync captures the job so we can inspect it after the method returns.
+        // When the token is already cancelled, AddAsync propagates the cancellation.
+        _repository
+            .AddAsync(Arg.Do<ConversionJob>(j => savedJob = j), Arg.Any<CancellationToken>())
+            .Returns(ci => ci.Arg<CancellationToken>().IsCancellationRequested
+                ? Task.FromCanceled(ci.Arg<CancellationToken>())
+                : Task.CompletedTask);
+        // SaveChangesAsync is called post-cancellation with CancellationToken.None so
+        // it must succeed (default NSubstitute behaviour returns Task.CompletedTask).
+
+        var sut = CreateService();
+        var command = new SubmitJobCommand(new byte[] { 1, 2, 3 }, "sample.pdf", OutputFormat.Html);
+
+        // Act — must NOT throw out of the method
+        var jobId = await sut.SubmitAndProcessAsync(command, cts.Token);
+
+        // Assert
+        // The job object was captured before the first await, so savedJob is not null.
+        Assert.NotNull(savedJob);
+        Assert.Equal(JobStatus.Failed, savedJob.Status);
+        Assert.Equal(ErrorCode.Cancelled, savedJob.ErrorCode);
+        Assert.Contains("cancelled", savedJob.ErrorMessage, StringComparison.OrdinalIgnoreCase);
+
+        // The Failed state must actually reach the database.
+        await _repository.Received(1).SaveChangesAsync(CancellationToken.None);
     }
 }

@@ -28,12 +28,12 @@ public class JobRepository : IJobRepository
             .ToListAsync();
     }
 
-    public async Task AddAsync(ConversionJob job)
+    public async Task AddAsync(ConversionJob job, CancellationToken cancellationToken = default)
     {
-        await _dbContext.ConversionJobs.AddAsync(job);
+        await _dbContext.ConversionJobs.AddAsync(job, cancellationToken);
     }
 
-    public async Task SaveChangesAsync()
+    public async Task SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         // EF Core 9 bug workaround: when a new JobEvent or OutputPart is added to
         // a ConversionJob's private backing collection (_events / _parts) via
@@ -56,6 +56,6 @@ public class JobRepository : IJobRepository
             entry.State = EntityState.Added;
         }
 
-        await _dbContext.SaveChangesAsync();
+        await _dbContext.SaveChangesAsync(cancellationToken);
     }
 }

@@ -7,5 +7,6 @@ public enum ErrorCode
     ScannedDocument,
     EmptyDocument,
     ValidationFailed,
+    Cancelled,
     Unknown
 }
